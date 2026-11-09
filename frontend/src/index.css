@@ -1,67 +1,130 @@
 @import "tailwindcss";
 
-
 @custom-variant dark (&:where(.dark, .dark *));
 
-@layer base{
-    body{
-        font-family: sans-serif;
-    }
-    .dark option{
-        background-color: black;
-    }
-    option{
-        background-color: rgb(222, 219, 219);
-    }
+/*
+  Neo-brutalist theme.
+  Neutral colours flip between light and dark; the bright accents stay the same
+  and always carry dark text, so they read on both.
+*/
+:root {
+  --nb-paper: #fff7e0;
+  --nb-card: #ffffff;
+  --nb-ink: #111111;
+  --nb-muted: #4a4a4a;
+  --nb-dots: #e9dfc2;
+}
+.dark {
+  --nb-paper: #161616;
+  --nb-card: #232323;
+  --nb-ink: #f5f0e1;
+  --nb-muted: #b9b4a6;
+  --nb-dots: #2a2a2a;
+}
+
+@theme inline {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --color-paper: var(--nb-paper);
+  --color-card: var(--nb-card);
+  --color-ink: var(--nb-ink);
+  --color-muted: var(--nb-muted);
+}
+
+@theme {
+  --color-black: #111111;
+  --color-nb-yellow: #ffd93d;
+  --color-nb-pink: #ff5c8a;
+  --color-nb-blue: #7dd3fc;
+  --color-nb-green: #a7f3a0;
+  --color-nb-purple: #c4b5fd;
+  --color-nb-orange: #fdba74;
+  --color-nb-red: #ff6b6b;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--nb-paper);
+    background-image: radial-gradient(var(--nb-dots) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+    color: var(--nb-ink);
+  }
+  option {
+    background-color: var(--nb-card);
+    color: var(--nb-ink);
+  }
+  input[type="checkbox"] {
+    accent-color: #111111;
+    width: 1rem;
+    height: 1rem;
+  }
+  .dark input[type="checkbox"] {
+    accent-color: #ffd93d;
+  }
+}
+
+@layer components {
+  .nb-card {
+    @apply bg-card text-ink border-3 border-ink rounded-xl shadow-[6px_6px_0_var(--nb-ink)];
+  }
+  .nb-card-flat {
+    @apply bg-card text-ink border-2 border-ink rounded-lg;
+  }
+
+  .nb-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 font-bold text-ink bg-card
+      border-3 border-ink rounded-lg shadow-[3px_3px_0_var(--nb-ink)] cursor-pointer select-none whitespace-nowrap
+      transition-[transform,box-shadow] duration-100
+      hover:-translate-x-px hover:-translate-y-px hover:shadow-[4px_4px_0_var(--nb-ink)]
+      active:translate-x-[3px] active:translate-y-[3px] active:shadow-none
+      disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-[3px_3px_0_var(--nb-ink)];
+  }
+  .nb-btn-sm {
+    @apply px-2.5 py-1 text-xs border-2 rounded-md shadow-[2px_2px_0_var(--nb-ink)]
+      hover:shadow-[3px_3px_0_var(--nb-ink)] active:translate-x-[2px] active:translate-y-[2px];
+  }
+  /* Filled buttons keep dark text in both modes. */
+  .nb-pink { @apply bg-nb-pink text-black; }
+  .nb-yellow { @apply bg-nb-yellow text-black; }
+  .nb-blue { @apply bg-nb-blue text-black; }
+  .nb-green { @apply bg-nb-green text-black; }
+  .nb-purple { @apply bg-nb-purple text-black; }
+  .nb-ink { @apply bg-ink text-paper; }
+
+  .nb-input {
+    @apply w-full bg-card text-ink font-medium px-4 py-3 border-3 border-ink rounded-lg
+      placeholder:text-muted outline-none transition-shadow
+      focus:shadow-[4px_4px_0_var(--nb-ink)];
+  }
+
+  .nb-chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold border-2 border-ink rounded-md whitespace-nowrap;
+  }
+
+  .nb-label {
+    @apply text-xs font-bold uppercase tracking-wider text-muted;
+  }
+
+  /* Subject colours, picked from the subject code so a subject keeps its colour everywhere. */
+  .sub-0 { background-color: #7dd3fc; color: #111; }
+  .sub-1 { background-color: #ffd93d; color: #111; }
+  .sub-2 { background-color: #a7f3a0; color: #111; }
+  .sub-3 { background-color: #c4b5fd; color: #111; }
+  .sub-4 { background-color: #fdba74; color: #111; }
+  .sub-5 { background-color: #f9a8d4; color: #111; }
 }
 
 @layer utilities {
-  .dark .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
   }
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #d0cccc; /* Tailwind blue-500 */
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--nb-ink);
     border-radius: 9999px;
+    border: 2px solid var(--nb-card);
   }
-  .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: #00000000; /* Tailwind gray-200 */
-    border-radius: 5px;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
-   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #000000;
-    border-radius: 9999px;
-  }
-   .custom-scrollbar::-webkit-scrollbar-track {
-    background: #00000000; 
-    border-radius: 5px;
-  }
-}
-
-
-
-@layer components{
-    .btn{
-        @apply px-4 py-2 rounded-xl bg-black text-white;
-    }
-    .dark-theme{
-        @apply bg-gradient-to-b from-[#142421f4] from-30% to-[#3f2b3a]
-    }
-    .light-theme{
-        @apply bg-gradient-to-b from-[#cafff3] to-[#d6b995]
-    }
-    .in{
-        @apply border border-white/10 w-4/5 h-12 placeholder-dark/60 dark:placeholder-white/60 rounded-xl p-5 bg-dark/20 dark:bg-white/40
-    }
-}
-
-@theme{
-    --color-primary : #ffff;
-    --color-secondary : #E1E1E1;
-    --color-dark : #000;
-    --color-dark-secondary : #1A1A1A;
 }

@@ -1,56 +1,72 @@
-import React,{useContext} from 'react'
+import React, { useContext } from 'react'
 import { ThemeContext } from '../Elements/ThemeProvider';
-import { Link } from 'react-router'
+import { Link, NavLink } from 'react-router'
 import { MoonIcon, SunIcon } from 'lucide-react';
 
-const Navbar = ({login = false,profile=false}) => {
+export const Logo = ({ className = "" }) => (
+  <span className={`inline-flex items-center gap-1.5 font-bold tracking-tight whitespace-nowrap ${className}`}>
+    <span className="bg-nb-yellow text-black border-3 border-ink px-2 rounded-md shadow-[3px_3px_0_var(--nb-ink)]">
+      SLOT
+    </span>
+    <span>WIZARD</span>
+  </span>
+);
 
-  const {IsDark, setIsDark} = useContext(ThemeContext);
+const navLink = ({ isActive }) =>
+  `px-3 py-1.5 font-bold rounded-md border-2 ${
+    isActive ? "bg-ink text-paper border-ink" : "border-transparent hover:border-ink"
+  }`;
 
-  const handleTheme = () => {
-    setIsDark((prev) => !prev);
-  }
+// login: hide the Login button (already signed in, or on the login page).
+// profile: signed-in pages; shows app links and Logout.
+const Navbar = ({ login = false, profile = false }) => {
+  const { IsDark, setIsDark } = useContext(ThemeContext);
 
   return (
-    <div className="flex justify-center items-center">
-      <div className="h-20 w-full flex place-content-between bg-white/10 backdrop-blur-sm border border-white/10 items-center shadow-2xl/20 ">
-        <Link to={"/"}>
-          <div className="text-2xl sm:text-4xl sm:ml-4 inline-block p-3 sm:p-6 font-bold dark:text-white whitespace-nowrap">
-            <span className="bg-dark text-primary dark:text-dark dark:bg-white p-1 rounded-xl">
-              Slot
-            </span>
-            -Wizard
-          </div>
+    <header className="sticky top-0 z-30 bg-paper border-b-3 border-ink">
+      <div className="max-w-7xl mx-auto h-18 px-4 sm:px-6 flex items-center justify-between gap-3">
+        <Link to={profile ? "/main" : "/"} aria-label="SlotWizard home">
+          <Logo className="text-lg sm:text-2xl" />
         </Link>
-        <div className='flex justify-center items-center my-8 mx-3 sm:mx-12 gap-3'>
-          <div className='bg-dark text-white dark:bg-white p-2 rounded-2xl dark:text-dark' onClick={handleTheme}>
-              {(IsDark) ? <MoonIcon /> : <SunIcon /> }
-          </div>
-          {!login && (<div>
-          <Link to={"/login"}>
-            <button className="btn cursor-cell dark:bg-white dark:text-dark px-5 py-2 font-bold">
-              Login
-            </button>
-          </Link>
-          </div>
-        )}
+
         {profile && (
-          <div>
-              {/* <Link to={"/profile"}>
-                <button className="btn dark:bg-white dark:text-dark my-8  px-4 font-bold">
-                  Profile
-                </button>
-              </Link> */}
-              <Link to={"/logout"}>
-                <button className="btn dark:bg-white dark:text-dark my-8 mx-5 px-4 font-bold">
-                  Logout
-                </button>
-              </Link>
-          </div>
+          <nav className="hidden md:flex items-center gap-2">
+            <NavLink to="/main" className={navLink}>Plan</NavLink>
+            <NavLink to="/timetable" className={navLink}>Timetables</NavLink>
+          </nav>
         )}
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            className="nb-btn px-2.5"
+            onClick={() => setIsDark((prev) => !prev)}
+            aria-label={IsDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={IsDark ? "Light mode" : "Dark mode"}
+          >
+            {IsDark ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+          </button>
+          {!login && (
+            <Link to="/login" className="nb-btn nb-pink">
+              Log in
+            </Link>
+          )}
+          {profile && (
+            <Link to="/logout" className="nb-btn nb-pink">
+              Log out
+            </Link>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Phones: app links on their own row */}
+      {profile && (
+        <nav className="md:hidden flex gap-2 px-4 pb-3">
+          <NavLink to="/main" className={navLink}>Plan</NavLink>
+          <NavLink to="/timetable" className={navLink}>Timetables</NavLink>
+        </nav>
+      )}
+    </header>
   );
 }
 

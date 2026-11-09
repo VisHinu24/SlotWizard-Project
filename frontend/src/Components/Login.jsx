@@ -51,19 +51,28 @@ const Login = () => {
     }
 
   return (
-    <div className='h-5/6 dark:text-white flex justify-center items-center'>
-        <div className='w-md  bg-dark/5 dark:bg-white/5 backdrop-blur-sm rounded-2xl shadow-2xl border dark:border-white/20 border-dark/20'>
-            <h1 className='text-4xl font-bold text-center p-6 '>Login</h1>
-            <form onSubmit={handleSubmit} className='flex flex-col gap-5 m-1 justify-center items-center'>
-                <input type="text" onChange={handleEmail} value={email} className='in' placeholder='Email'/>
-                <input type="password" onChange={handlePassword} value={password} className='in' placeholder='Password'/>
-                <button className='btn m-2 text-xl rounded-2xl dark:bg-white dark:text-dark px-4 font-bold' disabled={Loading}>
-                {Loading ? "Logging in..." : "Login"}
+    <div className='px-4 py-12 sm:py-20 flex justify-center'>
+        <div className='nb-card w-full max-w-md overflow-hidden'>
+            <div className='nb-yellow border-b-3 border-ink px-6 py-5'>
+                <h1 className='text-3xl font-bold'>Welcome back</h1>
+                <p className='font-medium'>Log in to plan your semester.</p>
+            </div>
+            <form onSubmit={handleSubmit} className='flex flex-col gap-4 p-6'>
+                <label className='flex flex-col gap-1.5'>
+                    <span className='nb-label'>Email</span>
+                    <input type="email" onChange={handleEmail} value={email} className='nb-input' placeholder='you@college.edu' autoComplete='email'/>
+                </label>
+                <label className='flex flex-col gap-1.5'>
+                    <span className='nb-label'>Password</span>
+                    <input type="password" onChange={handlePassword} value={password} className='nb-input' placeholder='Your password' autoComplete='current-password'/>
+                </label>
+                <button className='nb-btn nb-pink text-lg py-3 mt-2' disabled={Loading}>
+                {Loading ? "Logging in..." : "Log in"}
                 </button>
             </form>
-            <div className='text-md text-dark-secondary/70 dark:text-secondary/40 text-center py-5'>
-                <h3>Don't have an Account? <span className='text-dark dark:text-primary'><Link to={"/signup"}>Sign-Up</Link></span></h3>
-            </div>
+            <p className='text-center text-muted pb-6'>
+                New here? <Link to={"/signup"} className='font-bold text-ink underline decoration-3 decoration-nb-pink underline-offset-4'>Create an account</Link>
+            </p>
         </div>
     </div>
   )

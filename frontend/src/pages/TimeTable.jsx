@@ -1,4 +1,6 @@
-import Navbar from "../components/Navbar";
+import Navbar from "../Components/Navbar";
+import { ChevronLeft, ChevronRight, Lock, LockOpen, Pencil, Plus, RefreshCw, Save } from "lucide-react";
+import subjectColor from "../Lib/subjectColor";
 import { useEffect, useState } from "react";
 import api, { errorMessage } from "../Lib/axios";
 import { useNavigate } from "react-router";
@@ -52,12 +54,8 @@ const subjectsForEdit = (picks) =>
     return { code, mustInclude: mustInclude === true, preferredStaff: Object.fromEntries(all.map((n) => [n, staff.includes(n)])) };
   });
 
-const tabClass = (active) =>
-  `px-4 py-2 rounded-2xl border text-sm font-semibold transition-colors ${
-    active
-      ? "bg-blue-600 border-blue-700 text-white"
-      : "bg-dark/10 dark:bg-white/10 border-dark/20 dark:border-white/20 dark:text-white hover:bg-dark/20 dark:hover:bg-white/20"
-  }`;
+const tabClass = (active) => `nb-btn nb-btn-sm text-sm px-3 py-1.5 ${active ? "nb-ink" : ""}`;
+const DAY_SHORT = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri", Saturday: "Sat" };
 
 const Timetable = () => {
   const navigate = useNavigate();
@@ -92,7 +90,12 @@ const Timetable = () => {
   }, [navigate]);
 
   if (saved === null) {
-    return <div className="min-h-screen flex justify-center items-center dark:bg-dark dark:text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen">
+        <Navbar login={true} profile={true} />
+        <p className="text-center text-xl font-bold mt-24 animate-pulse">Loading your timetables…</p>
+      </div>
+    );
   }
 
   const variants = generated?.variants || [];
@@ -107,13 +110,16 @@ const Timetable = () => {
 
   if (!current) {
     return (
-      <div className="min-h-screen dark:bg-dark">
+      <div className="min-h-screen">
         <Navbar login={true} profile={true} />
-        <div className="flex flex-col items-center mt-16 gap-4 dark:text-white">
-          <p className="text-lg">No timetables yet.</p>
-          <button onClick={handleNew} className="btn bg-blue-700 text-white px-4 font-bold">
-            Create one
-          </button>
+        <div className="px-4 py-20 flex justify-center">
+          <div className="nb-card max-w-md w-full p-8 text-center">
+            <p className="text-3xl font-bold">No timetables yet</p>
+            <p className="text-muted mt-2">Pick your subjects and generate your first one.</p>
+            <button onClick={handleNew} className="nb-btn nb-pink text-lg px-6 py-3 mt-6">
+              <Plus size={20} /> Create one
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -204,243 +210,252 @@ const Timetable = () => {
 
   const title = inOptions ? `Option ${optionIndex + 1}` : `Saved timetable ${savedIndex + 1}`;
 
+  const notices = [
+    ...(inOptions && variants.length < MAX_VARIANTS
+      ? [`Only ${variants.length} possible timetable${variants.length === 1 ? "" : "s"} for these subjects.`]
+      : []),
+    ...(inOptions ? generated.warnings || [] : []),
+    ...(inOptions && generated.partial ? ["The search took too long and stopped early; these are the best found."] : []),
+  ];
+
   return (
-    <div className="min-h-screen dark:bg-dark">
+    <div className="min-h-screen">
       <Navbar login={true} profile={true} />
 
-      <div className="flex flex-col justify-center items-center mt-8 gap-6 px-4 w-full">
-        {/* New options vs saved history */}
-        {variants.length > 0 && (
-          <div className="flex gap-2">
-            <button className={tabClass(view === "options")} onClick={() => setView("options")}>
-              New options ({variants.length})
-            </button>
-            <button
-              className={tabClass(view === "saved")}
-              onClick={() => setView("saved")}
-              disabled={saved.length === 0}
-              title={saved.length === 0 ? "Nothing saved yet" : undefined}
-            >
-              Saved timetables ({saved.length})
-            </button>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
+        {/* Header: title, totals, actions */}
+        <div className="flex justify-between items-end gap-4 flex-wrap">
+          <div>
+            {variants.length > 0 && (
+              <div className="flex gap-2 mb-4">
+                <button className={tabClass(view === "options")} onClick={() => setView("options")}>
+                  New options ({variants.length})
+                </button>
+                <button
+                  className={tabClass(view === "saved")}
+                  onClick={() => setView("saved")}
+                  disabled={saved.length === 0}
+                  title={saved.length === 0 ? "Nothing saved yet" : undefined}
+                >
+                  Saved ({saved.length})
+                </button>
+              </div>
+            )}
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">{title}</h1>
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <span className="nb-chip nb-yellow border-black text-sm">{credits} credits</span>
+              <span className={`nb-chip text-sm border-black ${missedSubjects.length ? "nb-pink" : "nb-green"}`}>
+                {missedSubjects.length} missed
+              </span>
+            </div>
           </div>
+          <div className="flex gap-3 flex-wrap">
+            <button onClick={handleEdit} className="nb-btn">
+              <Pencil size={16} /> Edit
+            </button>
+            <button onClick={handleNew} className="nb-btn">
+              <Plus size={16} /> New
+            </button>
+            {inOptions && (
+              <button onClick={handleSave} disabled={saving || savedOptions[optionIndex]} className="nb-btn nb-pink">
+                <Save size={16} />
+                {savedOptions[optionIndex] ? "Saved ✓" : saving ? "Saving..." : "Save this one"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {credits === 0 && (
+          <p className="nb-card-flat nb-pink px-4 py-3 font-semibold">
+            None of your subjects could be placed. The reasons are listed under Missed subjects.
+          </p>
         )}
 
-        <div className="w-full max-w-5xl p-6 bg-dark/5 dark:bg-white/5 backdrop-blur-sm border border-dark/20 dark:border-white/20 rounded-4xl">
-          <div className="flex justify-between items-start gap-4 flex-wrap mb-4">
-            <div>
-              <h2 className="text-3xl font-bold dark:text-white">{title}</h2>
-              <p className="text-dark/60 dark:text-white/60 mt-1">
-                {credits} credits · {missedSubjects.length} missed
-              </p>
-              {credits === 0 && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                  None of your subjects could be placed. The reasons are listed under Missed Subjects.
-                </p>
-              )}
-              {brokenPreferences.length > 0 && (
-                <ul className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-                  {brokenPreferences.map((b) => (
-                    <li key={b}>Breaks your preference: {b}</li>
+        <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+          {/* Timetable */}
+          <section className="nb-card overflow-hidden">
+            {inOptions && (
+              <div className="flex justify-between items-center gap-3 flex-wrap px-5 py-4 border-b-3 border-ink">
+                <div className="flex gap-2 flex-wrap">
+                  {variants.map((v, i) => (
+                    <button key={i} className={tabClass(i === optionIndex)} onClick={() => setOptionIndex(i)}>
+                      Option {i + 1} · {v.credits} cr
+                    </button>
                   ))}
-                </ul>
-              )}
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              {inOptions && (
-                <button
-                  onClick={handleSave}
-                  disabled={saving || savedOptions[optionIndex]}
-                  className="btn bg-green-600 text-white px-4 font-bold disabled:opacity-60"
-                >
-                  {savedOptions[optionIndex] ? "Saved ✓" : saving ? "Saving..." : "Save this one"}
-                </button>
-              )}
-              <button onClick={handleEdit} className="btn bg-blue-700 text-white px-4 font-bold">
-                Edit
-              </button>
-              <button onClick={handleNew} className="btn bg-dark text-white dark:bg-white dark:text-dark px-4 font-bold">
-                New
-              </button>
-            </div>
-          </div>
-
-          {/* Option tabs */}
-          {inOptions && (
-            <div className="mb-4 flex flex-col gap-3">
-              <div className="flex gap-2 flex-wrap">
-                {variants.map((v, i) => (
-                  <button key={i} className={tabClass(i === optionIndex)} onClick={() => setOptionIndex(i)}>
-                    Option {i + 1} · {v.credits} cr
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-4 items-center flex-wrap text-sm">
+                </div>
                 {variants.length > 1 && (
-                  <label className="flex items-center gap-2 dark:text-white cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
                     <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />
                     Compare with Option 1
                   </label>
                 )}
-                {variants.length < MAX_VARIANTS && (
-                  <span className="text-dark/60 dark:text-white/60">
-                    Only {variants.length} possible timetable{variants.length === 1 ? "" : "s"} for these subjects.
-                  </span>
-                )}
-                {generated.warnings?.map((w) => (
-                  <span key={w} className="text-amber-600 dark:text-amber-400">
-                    {w}
-                  </span>
-                ))}
-                {generated.partial && (
-                  <span className="text-amber-600 dark:text-amber-400">
-                    The search took too long and stopped early; these are the best found.
-                  </span>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Locks */}
-          {request && (
-            <div className="mb-4 flex gap-3 items-center flex-wrap text-sm">
-              <button
-                onClick={handleRegenerate}
-                disabled={regenerating}
-                className="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-dark font-semibold disabled:opacity-60"
-              >
-                {regenerating ? "Regenerating..." : `Regenerate around locks (${locks.length})`}
-              </button>
-              {locks.length > 0 && (
-                <button
-                  onClick={() => setLocks([])}
-                  className="px-4 py-2 rounded-2xl border border-dark/30 dark:border-white/30 dark:text-white hover:bg-dark/10 dark:hover:bg-white/10"
-                >
-                  Clear all locks
-                </button>
-              )}
-              <span className="text-dark/60 dark:text-white/60">Click 🔓 on a class to keep it in that slot.</span>
-            </div>
-          )}
-
-          <div className="overflow-x-auto w-full">
-            <table className="w-full min-w-[600px] border-collapse border border-dark/20 dark:border-white/20">
-              <thead className="bg-dark/10 dark:bg-white/10">
-                <tr>
-                  <th className="border border-dark/20 dark:border-white/20 px-4 py-3 text-left dark:text-white">
-                    Time / Day
-                  </th>
-                  {days.map((day) => (
-                    <th key={day} className="border border-dark/20 dark:border-white/20 px-4 py-3 text-left dark:text-white">
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {timeSlots.map((slot, slotIndex) => (
-                  <tr key={slot} className="hover:bg-dark/10 dark:hover:bg-white/10">
-                    <td className="border border-dark/20 dark:border-white/20 px-4 py-2 font-semibold dark:text-white bg-dark/5 dark:bg-white/5">
-                      {slot}
-                    </td>
-                    {days.map((day) => {
-                      const cell = grid[day]?.[slot];
-                      const changed = differsFromFirst(day, slotIndex);
-                      const filled = cell?.subjectSlot && cell.subjectSlot !== "FREE";
-                      const isLocked = filled && lockOf(cell.code)?.slot === cell.subjectSlot;
-                      return (
-                        <td
-                          key={day + slot}
-                          className={`border border-dark/20 dark:border-white/20 px-4 py-2 dark:text-white align-top ${
-                            changed ? "bg-amber-300/40 dark:bg-amber-400/25 outline-2 outline-amber-500 -outline-offset-2" : ""
-                          } ${isLocked ? "shadow-[inset_0_0_0_3px_rgb(245,158,11)]" : ""}`}
-                          title={changed ? "Different from Option 1" : undefined}
-                        >
-                          {cell?.subjectSlot && cell.subjectSlot !== "FREE" ? (
-                            <div className="flex flex-col items-start">
-                              <div className="relative group max-w-[100px]">
-                                <div className="text-blue-600 dark:text-blue-400 font-bold line-clamp-2">{cell.subject}</div>
-                                <div
-                                  className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-1
-                                                hidden group-hover:block bg-dark/90 dark:bg-white/90
-                                                text-white dark:text-black text-xs px-2 py-1 rounded shadow-lg
-                                                whitespace-nowrap z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                                >
-                                  {cell.subject}
-                                </div>
-                              </div>
-                              <div className="text-dark/60 dark:text-white/60 text-sm">{cell.subjectSlot}</div>
-                              <div className="text-dark/40 dark:text-white/40 text-xs">{cell.duration}</div>
-                              {request && (
-                                <button
-                                  onClick={() => toggleLock(cell.code, cell.subjectSlot)}
-                                  className={`mt-1 text-xs px-2 py-0.5 rounded-full ${
-                                    isLocked
-                                      ? "bg-amber-500 text-dark font-semibold"
-                                      : "bg-dark/10 dark:bg-white/10 hover:bg-dark/20 dark:hover:bg-white/20"
-                                  }`}
-                                  title={isLocked ? "Unlock" : `Keep ${cell.code} in ${cell.subjectSlot}`}
-                                >
-                                  {isLocked ? "🔒 Locked" : "🔓 Lock"}
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-blue-600 dark:text-blue-400 font-bold">Free</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
+            {notices.length > 0 && (
+              <ul className="px-5 py-3 border-b-3 border-ink bg-nb-yellow text-black text-sm font-semibold flex flex-col gap-1">
+                {notices.map((n) => (
+                  <li key={n}>{n}</li>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </ul>
+            )}
 
-          {/* Saved history: step through it */}
-          {!inOptions && saved.length > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6 flex-wrap">
-              <button
-                onClick={() => setSavedIndex((i) => (i === 0 ? saved.length - 1 : i - 1))}
-                className="px-4 py-2 bg-dark/20 dark:bg-white/20 border border-dark/30 dark:border-white/30 rounded-2xl hover:bg-dark/30 dark:hover:bg-white/30 dark:text-white"
-              >
-                Previous
-              </button>
-              <span className="dark:text-white text-sm">
-                {savedIndex + 1} of {saved.length}
-              </span>
-              <button
-                onClick={() => setSavedIndex((i) => (i + 1) % saved.length)}
-                className="px-4 py-2 bg-blue-600 text-white border border-blue-800/30 rounded-2xl hover:bg-blue-700"
-              >
-                Next
-              </button>
+            <div className="overflow-x-auto custom-scrollbar p-4 sm:p-5">
+              <table className="w-full min-w-[760px] table-fixed border-separate border-spacing-1.5">
+                <thead>
+                  <tr>
+                    <th className="w-20" />
+                    {days.map((day) => (
+                      <th key={day} className="nb-label text-left px-1 pb-1">
+                        {DAY_SHORT[day]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {timeSlots.map((slot, slotIndex) => (
+                    <tr key={slot}>
+                      <td className="align-top pt-2 pr-1">
+                        <span className="block font-bold text-sm">{slot.split("-")[0]}</span>
+                        <span className="block text-xs text-muted">to {slot.split("-")[1]}</span>
+                      </td>
+                      {days.map((day) => {
+                        const cell = grid[day]?.[slot];
+                        const changed = differsFromFirst(day, slotIndex);
+                        const filled = cell?.subjectSlot && cell.subjectSlot !== "FREE";
+                        const isLocked = filled && lockOf(cell.code)?.slot === cell.subjectSlot;
+                        return (
+                          <td
+                            key={day + slot}
+                            className={`h-28 align-top rounded-lg p-2.5 ${
+                              filled
+                                ? `${subjectColor(cell.code)} border-black ${isLocked ? "border-4" : "border-2"}`
+                                : "border-2 border-dashed border-muted/40"
+                            } ${changed ? "outline-3 outline-offset-2 outline-nb-pink" : ""}`}
+                            title={changed ? "Different from Option 1" : filled ? cell.subject : undefined}
+                          >
+                            {filled ? (
+                              <div className="flex flex-col h-full gap-0.5">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-bold text-sm">{cell.code}</span>
+                                  {changed && <span className="nb-chip border-black bg-nb-pink text-[10px] px-1">new</span>}
+                                </div>
+                                <div className="text-xs font-semibold leading-tight line-clamp-2">{cell.subject}</div>
+                                <div className="text-[11px] opacity-70">
+                                  {cell.subjectSlot} · {cell.duration}
+                                </div>
+                                {request && (
+                                  <button
+                                    onClick={() => toggleLock(cell.code, cell.subjectSlot)}
+                                    className={`mt-auto self-start inline-flex items-center gap-1 text-[11px] font-bold px-1.5 py-0.5 border-2 border-black rounded-md cursor-pointer ${
+                                      isLocked ? "bg-black text-nb-yellow" : "bg-white/60 hover:bg-white"
+                                    }`}
+                                    title={isLocked ? "Unlock" : `Keep ${cell.code} in ${cell.subjectSlot}`}
+                                  >
+                                    {isLocked ? <Lock size={11} /> : <LockOpen size={11} />}
+                                    {isLocked ? "Locked" : "Lock"}
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-bold text-muted/70">Free</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
 
-        {/* Missed Subjects Section */}
-        {missedSubjects.length !== 0 && (
-          <div className="w-full max-w-2xl p-4 bg-dark/5 dark:bg-white/5 backdrop-blur-sm border border-dark/20 dark:border-white/20 rounded-4xl">
-            <h3 className="text-lg font-bold mb-3 dark:text-white text-center">Missed Subjects</h3>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-              {missedSubjects.map((item, index) => (
-                <div
-                  key={index}
-                  className="p-2 bg-dark/10 dark:bg-white/10 border border-dark/20 dark:border-white/20 rounded-xl flex flex-col items-center text-center break-words"
-                >
-                  <div className="text-blue-600 dark:text-blue-400 font-semibold text-sm">{item.subject}</div>
-                  <div className="text-dark/60 dark:text-white/60 text-xs">{item.code}</div>
-                  {item.reason && <div className="text-dark/70 dark:text-white/70 text-xs mt-1">{item.reason}</div>}
-                  {item.mustInclude && (
-                    <div className="text-xs mt-1 px-2 py-0.5 rounded-full bg-red-600 text-white">Must-include subject left out</div>
+            {/* Saved history: step through it */}
+            {!inOptions && saved.length > 1 && (
+              <div className="flex justify-center items-center gap-4 px-5 py-4 border-t-3 border-ink">
+                <button onClick={() => setSavedIndex((i) => (i === 0 ? saved.length - 1 : i - 1))} className="nb-btn">
+                  <ChevronLeft size={16} /> Previous
+                </button>
+                <span className="font-bold">
+                  {savedIndex + 1} of {saved.length}
+                </span>
+                <button onClick={() => setSavedIndex((i) => (i + 1) % saved.length)} className="nb-btn nb-blue">
+                  Next <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Side column */}
+          <aside className="flex flex-col gap-6">
+            {request && (
+              <div className="nb-card overflow-hidden">
+                <div className="px-5 py-3 border-b-3 border-ink bg-nb-yellow text-black flex items-center gap-2">
+                  <Lock size={18} />
+                  <h2 className="font-bold text-lg">Locks</h2>
+                  <span className="nb-chip border-black bg-white ml-auto">{locks.length}</span>
+                </div>
+                <div className="p-5 flex flex-col gap-3">
+                  <p className="text-sm text-muted">Lock a class to keep it in its slot, then regenerate the rest around it.</p>
+                  {locks.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {locks.map((l) => (
+                        <span key={l.code} className={`${subjectColor(l.code)} nb-chip border-black`}>
+                          {l.code} · {l.slot}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <button onClick={handleRegenerate} disabled={regenerating} className="nb-btn nb-yellow w-full">
+                    <RefreshCw size={16} className={regenerating ? "animate-spin" : ""} />
+                    {regenerating ? "Regenerating..." : "Regenerate around locks"}
+                  </button>
+                  {locks.length > 0 && (
+                    <button onClick={() => setLocks([])} className="nb-btn w-full">
+                      Clear all locks
+                    </button>
                   )}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {brokenPreferences.length > 0 && (
+              <div className="nb-card p-5">
+                <h2 className="font-bold text-lg mb-2">Preferences this breaks</h2>
+                <ul className="flex flex-col gap-1.5 text-sm">
+                  {brokenPreferences.map((b) => (
+                    <li key={b} className="nb-card-flat bg-paper px-3 py-2 font-medium">
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="nb-card overflow-hidden">
+              <div className="px-5 py-3 border-b-3 border-ink bg-nb-pink text-black flex items-center gap-2">
+                <h2 className="font-bold text-lg">Missed subjects</h2>
+                <span className="nb-chip border-black bg-white ml-auto">{missedSubjects.length}</span>
+              </div>
+              {missedSubjects.length === 0 ? (
+                <p className="p-5 font-semibold">Everything fits. Nothing missed.</p>
+              ) : (
+                <ul className="p-4 flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  {missedSubjects.map((item, index) => (
+                    <li key={index} className="nb-card-flat p-3 break-words">
+                      <span className={`${subjectColor(item.code)} nb-chip border-black`}>{item.code}</span>
+                      <div className="font-bold mt-1.5 leading-tight">{item.subject}</div>
+                      {item.reason && <div className="text-sm text-muted mt-1">{item.reason}</div>}
+                      {item.mustInclude && (
+                        <span className="nb-chip bg-nb-red text-black border-black mt-2">Must-include subject left out</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          </div>
-        )}
-      </div>
+          </aside>
+        </div>
+      </main>
     </div>
   );
 };

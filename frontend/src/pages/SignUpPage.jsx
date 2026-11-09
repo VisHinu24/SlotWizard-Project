@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import Navbar from '../components/Navbar'
+import Navbar from '../Components/Navbar'
 import toast from 'react-hot-toast'
-import { Loader2Icon } from 'lucide-react'
+import { Link } from 'react-router'
 import { useNavigate } from 'react-router'
 
 import api from '../Lib/axios'
@@ -85,19 +85,29 @@ const SignUpPage = () => {
   const handleConfPassword = (e) => setConfPassword(e.target.value);
 
 
+  const field = (label, input) => (
+    <label className='flex flex-col gap-1.5'>
+      <span className='nb-label'>{label}</span>
+      {input}
+    </label>
+  );
+
   return (
-    <div className='h-screen dark:bg-dark'>
+    <div className='min-h-screen'>
         <Navbar />
-        <div className='m-20 flex justify-center dark:text-white items-center'>
-            <div className='w-2xl bg-dark/5 dark:bg-white/5 backdrop-blur-sm border border-dark/20 dark:border-white/20 rounded-4xl'>
-                <h1 className='text-4xl font-bold text-center p-5'>Sign-Up</h1>
-                <form onSubmit={handleClick} className='flex flex-col gap-5 m-1 p-4 justify-center items-center'>
-                  <input type="text" onChange={handleUserName} value={username} name='name' className='in' placeholder='Username'/>
-                  <input type="email" onChange={handleEmail} value={email} name='email' className='in' placeholder='Email'/>
-                  <input type="text" onChange={handleRegNo} value={RegNo} name='reg-num' className='in' placeholder='Register Number'/>
-                  <div className='flex gap-3 justify-center items-center'>
-                      <select name="dept" onChange={handleDept} value={dept} className='bg-dark/20 dark:bg-white/40 border border-white/10 rounded-xl px-6 p-3 text-dark/60 dark:text-white/60' id="dept">
-                          <option value="Department" hidden>Select a Department</option>
+        <div className='px-4 py-12 sm:py-16 flex justify-center'>
+            <div className='nb-card w-full max-w-2xl overflow-hidden'>
+                <div className='nb-blue border-b-3 border-ink px-6 py-5'>
+                    <h1 className='text-3xl font-bold'>Create your account</h1>
+                    <p className='font-medium'>Takes a minute. Then build your first timetable.</p>
+                </div>
+                <form onSubmit={handleClick} className='grid sm:grid-cols-2 gap-4 p-6'>
+                  {field('Name', <input type="text" onChange={handleUserName} value={username} name='name' className='nb-input' placeholder='Asha Kumar' autoComplete='name'/>)}
+                  {field('Email', <input type="email" onChange={handleEmail} value={email} name='email' className='nb-input' placeholder='you@college.edu' autoComplete='email'/>)}
+                  {field('Register number', <input type="text" inputMode='numeric' onChange={handleRegNo} value={RegNo} name='reg-num' className='nb-input' placeholder='12 digits'/>)}
+                  {field('Department',
+                      <select name="dept" onChange={handleDept} value={dept} className='nb-input cursor-pointer' id="dept">
+                          <option value="" hidden>Select a department</option>
                           <option value="CSE">CSE</option>
                           <option value="IT">IT</option>
                           <option value="AIDS">AI-DS</option>
@@ -105,15 +115,16 @@ const SignUpPage = () => {
                           <option value="CSE(CS)">CSE(CS)</option>
                           <option value="CSE(IOT)">CSE(IOT)</option>
                       </select>
-                  </div>
-                  <div className='w-4/5 flex gap-4'>
-                      <input type="password" onChange={handlePassword} value={password} name="password" className='in w-full' placeholder='Create Password' />
-                      <input type="password" onChange={handleConfPassword} value={confirm_password} name="password" className='in w-full' placeholder='Confirm Password' />
-                  </div>
-                  <button className='btn m-2 text-xl rounded-2xl dark:bg-white dark:text-dark px-4 font-bold' disabled={Loading}>
-                    {Loading ? "Creating..." : "Create Account"}
+                  )}
+                  {field('Password', <input type="password" onChange={handlePassword} value={password} name="password" className='nb-input' placeholder='Create a password' autoComplete='new-password'/>)}
+                  {field('Confirm password', <input type="password" onChange={handleConfPassword} value={confirm_password} name="confirm-password" className='nb-input' placeholder='Type it again' autoComplete='new-password'/>)}
+                  <button className='nb-btn nb-pink text-lg py-3 sm:col-span-2 mt-2' disabled={Loading}>
+                    {Loading ? "Creating..." : "Create account"}
                   </button>
                 </form>
+                <p className='text-center text-muted pb-6'>
+                    Already have an account? <Link to="/login" className='font-bold text-ink underline decoration-3 decoration-nb-blue underline-offset-4'>Log in</Link>
+                </p>
             </div>
         </div>
     </div>

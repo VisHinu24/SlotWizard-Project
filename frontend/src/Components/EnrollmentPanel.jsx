@@ -1,176 +1,185 @@
 import React, { useState } from 'react';
+import { ChevronDown, Lock, Sparkles, Star, Trash2, X } from 'lucide-react';
+import subjectColor from '../Lib/subjectColor';
 
 const EnrollmentPanel = ({ selectedSubjects, onUpdateStaff, onGenerate, onDeleteSubject, totalCredits = 0, maxCredits = 30, maxSubjects = 13, beforeGenerate = null, generating = false, locks = [], onToggleMustInclude, onOnlyStaff, onUnlock }) => {
   const [expandedSubjects, setExpandedSubjects] = useState({});
-  
-  const handleSelectAll = (subj, value) => {
-  const updatedStaff = subj.preferredStaff
-    ? Object.fromEntries(Object.keys(subj.preferredStaff).map(staff => [staff, value]))
-    : {};
-  onUpdateStaff(subj.code, updatedStaff, true);
-};
 
+  const handleSelectAll = (subj, value) => {
+    const updatedStaff = subj.preferredStaff
+      ? Object.fromEntries(Object.keys(subj.preferredStaff).map(staff => [staff, value]))
+      : {};
+    onUpdateStaff(subj.code, updatedStaff, true);
+  };
 
   const toggleExpand = (code) => {
     setExpandedSubjects(prev => ({ ...prev, [code]: !prev[code] }));
   };
 
+  const atLimit = selectedSubjects.length >= maxSubjects;
+
   return (
-    <div className="flex-1 m-3 p-5 bg-white/10 dark:bg-gray-800/50 rounded-3xl z-10 backdrop-blur-sm shadow-lg overflow-y-auto">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-dark dark:text-white">Selected Subjects</h2>
-        <div className="flex gap-2 flex-wrap justify-end">
-        <span
-          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            selectedSubjects.length >= maxSubjects
-              ? 'bg-amber-400 text-dark'
-              : 'bg-dark/10 dark:bg-white/10 text-dark dark:text-white'
-          }`}
-        >
-          {selectedSubjects.length} / {maxSubjects} subjects
-        </span>
-        <span
-          className="px-3 py-1 rounded-full text-sm font-semibold bg-dark/10 dark:bg-white/10 text-dark dark:text-white"
-          title={`Select as many as you like. The timetable will fit up to ${maxCredits} credits (college limit).`}
-        >
-          {totalCredits} credits selected · timetable fits up to {maxCredits}
-        </span>
+    <section className="flex flex-col gap-6">
+      <div className="nb-card overflow-hidden">
+        <div className="flex justify-between items-center gap-3 flex-wrap px-5 py-4 border-b-3 border-ink">
+          <h2 className="text-xl font-bold">Your picks</h2>
+          <div className="flex gap-2 flex-wrap">
+            <span className={`nb-chip text-sm ${atLimit ? 'nb-yellow' : 'bg-card'}`}>
+              {selectedSubjects.length} / {maxSubjects} subjects
+            </span>
+            <span
+              className={`nb-chip text-sm ${totalCredits >= maxCredits ? 'nb-green' : 'bg-card'}`}
+              title={`Select as many as you like. The timetable will fit up to ${maxCredits} credits (college limit).`}
+            >
+              {totalCredits} credits · fits {maxCredits}
+            </span>
+          </div>
         </div>
-      </div>
-      {selectedSubjects.length === 0 ? (
-        <p className="text-dark/50 dark:text-white/50 mt-4">
-          No subjects selected. Pick subjects from the list to get started. Choosing a few more than 30 credits
-          gives the timetable room to work around clashes.
-        </p>
-      ) : (
-        <div className="mt-4 space-y-6">
-          <p className="text-sm text-dark/60 dark:text-white/60">
-            When subjects clash, the timetable drops whichever ones keep your credits highest. Tap{' '}
-            <span className="font-semibold">Must include</span> on a subject you can't skip (e.g. a core subject):
-            every option will have it, even if that means fewer credits.
-          </p>
-          {selectedSubjects.map((subj) => {
-            const uniqueStaff = Array.from(new Set(subj.schedules.map(s => s.staff)));
-            const isExpanded = expandedSubjects[subj.code] || false;
-            const lock = locks.find((l) => l.code === subj.code);
 
-            return (
-              <div key={subj.code} className="p-4 border rounded-lg bg-dark/10 dark:bg-white/10">
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-semibold text-dark dark:text-white">{subj.code} - {subj.subject}</h3>
-                    {lock && (
-                      <span className="self-start inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-400 text-dark">
-                        🔒 Locked to {lock.slot}
-                        <button onClick={() => onUnlock?.(subj.code)} className="ml-1 hover:opacity-70" title="Unlock">
-                          ✕
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* Must include */}
-                    <button
-                      onClick={() => onToggleMustInclude?.(subj.code)}
-                      className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                        subj.mustInclude
-                          ? 'bg-green-600 text-white'
-                          : 'bg-dark/10 dark:bg-white/10 text-dark dark:text-white hover:bg-dark/20 dark:hover:bg-white/20'
-                      }`}
-                      title="Must include: every timetable option will have this subject, even if that means fewer total credits"
-                    >
-                      {subj.mustInclude ? '✓ Must include' : 'Must include'}
-                    </button>
-                    {/* Collapse/Expand */}
-                    <button
-                      onClick={() => toggleExpand(subj.code)}
-                      className="p-1 rounded hover:bg-dark/20 dark:hover:bg-white/20 text-lg"
-                    >
-                      {isExpanded ? '▲' : '▼'}
-                    </button>
+        {selectedSubjects.length === 0 ? (
+          <div className="px-5 py-12 text-center">
+            <p className="text-2xl font-bold">Start with the catalog</p>
+            <p className="text-muted mt-2 max-w-md mx-auto">
+              Click subjects to add them here. Picking a few more than 30 credits gives the timetable room to work
+              around clashes.
+            </p>
+          </div>
+        ) : (
+          <div className="p-5 flex flex-col gap-4">
+            <p className="text-sm text-muted">
+              When subjects clash, the timetable drops whichever ones keep your credits highest. Mark a subject{' '}
+              <span className="font-bold text-ink">Must include</span> if you can't skip it: every option will have it,
+              even if that means fewer credits.
+            </p>
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => onDeleteSubject(subj.code)}
-                      className="p-1 rounded hover:bg-red-200 dark:hover:bg-red-600 text-red-500 dark:text-red-400 text-lg"
-                      title="Delete Subject"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
+            {selectedSubjects.map((subj) => {
+              const uniqueStaff = Array.from(new Set(subj.schedules.map(s => s.staff)));
+              const chosen = uniqueStaff.filter((n) => subj.preferredStaff[n]).length;
+              const isExpanded = expandedSubjects[subj.code] || false;
+              const lock = locks.find((l) => l.code === subj.code);
 
-                {isExpanded && (
-                  <div className="mt-3 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-dark/60 dark:text-white/60">Available Staff</p>
-                      <div className="flex gap-2">
+              return (
+                <div key={subj.code} className="nb-card-flat overflow-hidden flex">
+                  <span className={`${subjectColor(subj.code)} w-2.5 shrink-0 border-r-2 border-ink`} aria-hidden="true" />
+                  <div className="flex-1 min-w-0">
+                    {/* Buttons sit in a fixed spot: right side on wider screens, under the name on phones.
+                        Long names wrap inside their own column instead of pushing the buttons down. */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`${subjectColor(subj.code)} nb-chip border-black`}>{subj.code}</span>
+                          <span className="text-xs font-bold text-muted">{subj.credits} cr</span>
+                          {lock && (
+                            <span className="nb-chip nb-yellow border-black">
+                              <Lock size={12} /> {lock.slot}
+                              <button onClick={() => onUnlock?.(subj.code)} className="ml-0.5 hover:opacity-60" title="Unlock" aria-label={`Unlock ${subj.code}`}>
+                                <X size={12} />
+                              </button>
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-bold leading-tight break-words">{subj.subject}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
-                          onClick={() => handleSelectAll(subj, true)}
-                          className="px-3 py-1 text-xs rounded bg-green-500 text-white hover:bg-green-600"
+                          onClick={() => onToggleMustInclude?.(subj.code)}
+                          className={`nb-btn nb-btn-sm ${subj.mustInclude ? 'nb-green' : ''}`}
+                          title="Must include: every timetable option will have this subject, even if that means fewer total credits"
                         >
-                          Select All
+                          <Star size={13} className={subj.mustInclude ? 'fill-current' : ''} />
+                          Must include
                         </button>
                         <button
-                          onClick={() => handleSelectAll(subj, false)}
-                          className="px-3 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600"
+                          onClick={() => toggleExpand(subj.code)}
+                          className="nb-btn nb-btn-sm min-w-[7.5rem] justify-between tabular-nums"
+                          aria-expanded={isExpanded}
+                          title="Choose faculty"
                         >
-                          Clear All
+                          {chosen}/{uniqueStaff.length} faculty
+                          <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                        <button
+                          onClick={() => onDeleteSubject(subj.code)}
+                          className="nb-btn nb-btn-sm hover:bg-nb-red hover:text-black"
+                          title="Remove subject"
+                          aria-label={`Remove ${subj.code}`}
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-
-                    {uniqueStaff.map((staffName, index) => {
-                      const isSelected = subj.preferredStaff[staffName] || false;
-                      return (
-                        <div key={index} className="flex items-center justify-between p-3 bg-dark/20 dark:bg-white/20 rounded-lg">
-                          <div>
-                            <p className="font-medium text-dark dark:text-white">{staffName}</p>
-                            <p className="text-sm text-dark/50 dark:text-white/50">
-                              {subj.schedules.filter(s => s.staff === staffName).map(s => s.slot).join(', ')}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => onOnlyStaff?.(subj.code, staffName)}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-dark/10 dark:bg-white/10 text-dark dark:text-white hover:bg-dark/20 dark:hover:bg-white/20"
-                            title="Lock this faculty: deselect everyone else"
-                          >
-                            Only this
-                          </button>
-                          <button
-                            onClick={() => onUpdateStaff(subj.code, staffName)}
-                            className={`px-4 py-1 rounded-full font-medium ${
-                              isSelected
-                                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                : 'bg-gray-200 text-dark hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            {isSelected ? 'Selected' : 'Select'}
-                          </button>
+                    {isExpanded && (
+                      <div className="border-t-2 border-ink p-3 flex flex-col gap-2.5 bg-paper">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="nb-label">Faculty</p>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleSelectAll(subj, true)} className="nb-btn nb-btn-sm">
+                              Select all
+                            </button>
+                            <button onClick={() => handleSelectAll(subj, false)} className="nb-btn nb-btn-sm">
+                              Clear all
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        {uniqueStaff.map((staffName) => {
+                          const isSelected = subj.preferredStaff[staffName] || false;
+                          return (
+                            <div
+                              key={staffName}
+                              className={`flex items-center justify-between gap-3 flex-wrap p-2.5 border-2 border-ink rounded-lg ${
+                                isSelected ? 'bg-card' : 'bg-card opacity-60'
+                              }`}
+                            >
+                              <label className="flex items-center gap-3 cursor-pointer min-w-0">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => onUpdateStaff(subj.code, staffName)}
+                                />
+                                <span className="min-w-0">
+                                  <span className="block font-bold">{staffName}</span>
+                                  <span className="flex gap-1 flex-wrap mt-1">
+                                    {subj.schedules.filter(s => s.staff === staffName).map(s => (
+                                      <span key={s.slot} className="nb-chip bg-paper font-semibold">{s.slot}</span>
+                                    ))}
+                                  </span>
+                                </span>
+                              </label>
+                              <button
+                                onClick={() => onOnlyStaff?.(subj.code, staffName)}
+                                className="nb-btn nb-btn-sm"
+                                title="Lock this faculty: deselect everyone else"
+                              >
+                                Only this
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-          {beforeGenerate}
-          <button
-            onClick={onGenerate}
-            disabled={selectedSubjects.length < 1 || generating}
-            className={`mt-6 w-full py-2 rounded-lg text-white ${
-              selectedSubjects.length < 1 || generating ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-          >
-            {generating ? 'Generating…' : 'Generate Timetable'}
-          </button>
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {selectedSubjects.length > 0 && beforeGenerate}
+
+      {selectedSubjects.length > 0 && (
+        <button
+          onClick={onGenerate}
+          disabled={generating}
+          className="nb-btn nb-pink w-full text-xl py-4"
+        >
+          <Sparkles size={22} />
+          {generating ? 'Generating…' : 'Generate timetable'}
+        </button>
       )}
-    </div>
+    </section>
   );
 };
 

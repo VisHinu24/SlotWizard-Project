@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
-import Navbar from "../components/Navbar";
+import Navbar from "../Components/Navbar";
 import Sidebar from "../Components/Sidebar";
 import EnrollmentPanel from "../Components/EnrollmentPanel";
 import PreferencesPanel from "../Components/PreferencesPanel";
@@ -236,29 +236,29 @@ const MainPage = () => {
     }
   };
 
+  const firstName = user.name?.split(" ")[0];
+
   return (
-    <div className="dark:bg-dark min-h-screen">
+    <div className="min-h-screen">
       <Navbar login={true} profile={true} />
-      <div className="flex flex-col sm:flex-row">
-        <Sidebar
-          subjects={filteredSubjects}
-          onAddSubject={handleAddSubject}
-          selectedCodes={new Set(selectedSubjects.map((s) => s.code))}
-          locked={selectedSubjects.length >= MAX_SUBJECTS}
-          maxSubjects={MAX_SUBJECTS}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-        />
-        <div className="w-full sm:w-[60%]">
-          {user.tables?.length != 0 && (
-            <div className="mt-1 backdrop-blur-md flex justify-end">
-              <Link to={"/timetable"}>
-                <button className="btn bg-blue-700 m-2 cursor-pointer font-bold">
-                  Existing timetable
-                </button>
-              </Link>
-            </div>
-          )}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-8">
+          <p className="nb-label">{firstName ? `Hey ${firstName}` : "Semester planner"}</p>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mt-1">
+            Plan your{" "}
+            <span className="bg-nb-blue text-black px-2 border-3 border-ink rounded-lg inline-block -rotate-1">semester</span>
+          </h1>
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] gap-6 items-start">
+          <Sidebar
+            subjects={filteredSubjects}
+            onAddSubject={handleAddSubject}
+            selectedCodes={new Set(selectedSubjects.map((s) => s.code))}
+            locked={selectedSubjects.length >= MAX_SUBJECTS}
+            maxSubjects={MAX_SUBJECTS}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
           <EnrollmentPanel
             selectedSubjects={selectedSubjects}
             onUpdateStaff={handleUpdateStaff}
@@ -277,7 +277,7 @@ const MainPage = () => {
             maxSubjects={MAX_SUBJECTS}
           />
         </div>
-      </div>
+      </main>
     </div>
   );
 };

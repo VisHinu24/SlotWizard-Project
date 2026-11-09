@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ChevronDown, Clock } from "lucide-react";
 import { DEFAULT_PREFERENCES } from "../Lib/preferences";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -9,16 +10,16 @@ const WEIGHTS = [
 ];
 
 const Segmented = ({ options, value, onChange, disabled }) => (
-  <div className={`inline-flex rounded-lg overflow-hidden border border-dark/20 dark:border-white/20 ${disabled ? "opacity-40" : ""}`}>
+  <div className={`inline-flex rounded-md overflow-hidden border-2 border-ink divide-x-2 divide-ink ${disabled ? "opacity-40" : ""}`}>
     {options.map(([key, label]) => (
       <button
         key={key}
         type="button"
         disabled={disabled}
         onClick={() => onChange(key)}
-        className={`px-2.5 py-1 text-xs font-semibold ${
-          value === key ? "bg-blue-600 text-white" : "bg-dark/5 dark:bg-white/5 text-dark dark:text-white hover:bg-dark/15 dark:hover:bg-white/15"
-        }`}
+        className={`px-2.5 py-1 text-xs font-bold ${
+          value === key ? "bg-nb-yellow text-black" : "bg-card text-ink enabled:hover:bg-paper"
+        } ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
       >
         {label}
       </button>
@@ -27,9 +28,9 @@ const Segmented = ({ options, value, onChange, disabled }) => (
 );
 
 const Row = ({ label, hint, pref, onChange, canBeHard = true, children }) => (
-  <div className="p-3 rounded-lg bg-dark/10 dark:bg-white/10 flex flex-col gap-2">
+  <div className={`p-3 border-2 border-ink rounded-lg flex flex-col gap-2 ${pref.on ? "bg-card" : "bg-paper"}`}>
     <div className="flex items-center justify-between gap-3 flex-wrap">
-      <label className="flex items-center gap-2 font-medium text-dark dark:text-white cursor-pointer">
+      <label className="flex items-center gap-2.5 font-bold cursor-pointer">
         <input type="checkbox" checked={pref.on} onChange={(e) => onChange({ on: e.target.checked })} />
         {label}
       </label>
@@ -49,7 +50,7 @@ const Row = ({ label, hint, pref, onChange, canBeHard = true, children }) => (
       </div>
     </div>
     {pref.on && children}
-    {pref.on && hint && <p className="text-xs text-dark/60 dark:text-white/60">{hint(pref)}</p>}
+    {pref.on && hint && <p className="text-xs text-muted">{hint(pref)}</p>}
   </div>
 );
 
@@ -71,23 +72,25 @@ const PreferencesPanel = ({ preferences, onChange }) => {
   };
 
   return (
-    <div className="mt-6 border border-dark/20 dark:border-white/20 rounded-lg">
+    <div className="nb-card overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex justify-between items-center px-4 py-3 font-semibold text-dark dark:text-white"
+        aria-expanded={open}
+        className={`w-full flex justify-between items-center gap-3 px-5 py-4 font-bold text-lg cursor-pointer ${open ? "border-b-3 border-ink" : ""}`}
       >
-        <span>
-          Time preferences{" "}
-          <span className="text-sm font-normal text-dark/60 dark:text-white/60">
-            {activeCount ? `(${activeCount} on)` : "(none)"}
+        <span className="flex items-center gap-3">
+          <span className="nb-blue inline-flex p-1.5 border-2 border-ink rounded-md"><Clock size={18} /></span>
+          Time preferences
+          <span className={`nb-chip ${activeCount ? "nb-yellow" : "bg-card"}`}>
+            {activeCount ? `${activeCount} on` : "none"}
           </span>
         </span>
-        <span>{open ? "▲" : "▼"}</span>
+        <ChevronDown size={20} className={`transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="px-4 pb-4 flex flex-col gap-3">
+        <div className="p-5 flex flex-col gap-3">
           <Row label="No 8:00–10:00 classes" pref={prefs.avoidEarly} onChange={update("avoidEarly")} hint={hardOrSoft} />
           <Row label="No 3:00–5:00 classes" pref={prefs.avoidLate} onChange={update("avoidLate")} hint={hardOrSoft} />
           <Row label="Keep days free" pref={prefs.freeDays} onChange={update("freeDays")} hint={hardOrSoft}>
@@ -97,11 +100,7 @@ const PreferencesPanel = ({ preferences, onChange }) => {
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                    prefs.freeDays.days.includes(day)
-                      ? "bg-blue-600 text-white"
-                      : "bg-dark/10 dark:bg-white/10 text-dark dark:text-white hover:bg-dark/20 dark:hover:bg-white/20"
-                  }`}
+                  className={`nb-btn nb-btn-sm ${prefs.freeDays.days.includes(day) ? "nb-blue" : ""}`}
                 >
                   {day.slice(0, 3)}
                 </button>
@@ -116,12 +115,12 @@ const PreferencesPanel = ({ preferences, onChange }) => {
             hint={() => "Soft only: prefers classes back to back on the same day."}
           />
           <Row label="Max classes per day" pref={prefs.maxPerDay} onChange={update("maxPerDay")} hint={hardOrSoft}>
-            <label className="flex items-center gap-2 text-sm text-dark dark:text-white">
+            <label className="flex items-center gap-2 text-sm font-medium">
               At most
               <select
                 value={prefs.maxPerDay.max}
                 onChange={(e) => update("maxPerDay")({ max: Number(e.target.value) })}
-                className="rounded px-2 py-1 bg-white dark:bg-gray-800 border border-dark/20 dark:border-white/20"
+                className="px-2 py-1 font-bold bg-card text-ink border-2 border-ink rounded-md cursor-pointer"
               >
                 {[1, 2, 3].map((n) => (
                   <option key={n} value={n}>
@@ -132,7 +131,7 @@ const PreferencesPanel = ({ preferences, onChange }) => {
               of 4 slots a day
             </label>
           </Row>
-          <p className="text-xs text-dark/60 dark:text-white/60">
+          <p className="text-xs text-muted">
             Weight sets how much a soft preference matters. Credits always come first: one extra credit outweighs two High
             misses.
           </p>
