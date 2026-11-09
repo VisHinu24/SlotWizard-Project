@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import api from '../Lib/axios';
 import toast from 'react-hot-toast';
+import { clearPlannerStorage } from "../Lib/plannerStorage";
 
 const LogoutPage = () => {
 
@@ -9,6 +10,7 @@ const LogoutPage = () => {
 
   useEffect(() => {
     async function Logout(){
+      clearPlannerStorage(); // even if the request fails, don't leave picks for the next person
       try {
         const res = await api.get('logout');
 

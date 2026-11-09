@@ -5,6 +5,7 @@ import { Loader2Icon } from 'lucide-react'
 import { useNavigate } from 'react-router'
 
 import api from '../Lib/axios'
+import { clearPlannerStorage } from "../Lib/plannerStorage";
 
 const SignUpPage = () => {
 
@@ -58,6 +59,7 @@ const SignUpPage = () => {
     })
     if(res.data.success)
     {
+      clearPlannerStorage();
       toast.success("Welcome To Slot-Wizard");
       navigate('/main');
     }

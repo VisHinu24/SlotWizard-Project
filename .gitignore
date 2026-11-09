@@ -65,3 +65,5 @@ coverage/
 .vscode/settings.json
 .vscode/tasks.json
 .vscode/launch.json
+# Local-only test login
+docs/LOCAL_TEST_ACCOUNT.md

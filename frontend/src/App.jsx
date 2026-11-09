@@ -59,8 +59,8 @@ const Main = () => {
 
   return (
       <div className={IsDark ? 'dark' : ''}>
-      <div className='hidden sm:block'>
-      <div className="pointer-events-none fixed top-0 left-0 w-full h-full z-0">
+      {/* Particle background only on larger screens; the app itself shows everywhere. */}
+      <div className="hidden sm:block pointer-events-none fixed top-0 left-0 w-full h-full z-0">
         <Particles  
           key={IsDark ? "dark" : "light"}
           particleColors={[color, color]}
@@ -74,7 +74,6 @@ const Main = () => {
         />
       </div>
       <RouterProvider router={router}></RouterProvider>
-    </div>
     </div>
   );
 };

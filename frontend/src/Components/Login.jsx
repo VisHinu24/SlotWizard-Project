@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import api from '../Lib/axios'
 import toast from 'react-hot-toast'
+import { clearPlannerStorage } from "../Lib/plannerStorage";
 
 const Login = () => {
     const navigate = useNavigate()
@@ -30,6 +31,7 @@ const Login = () => {
                 password : password
             })
             if(res.data.success){
+                clearPlannerStorage();
                 toast.success("Logging in Successfully");
                 navigate('/main');
             }

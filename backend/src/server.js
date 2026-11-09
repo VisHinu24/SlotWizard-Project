@@ -13,16 +13,18 @@ await connectDB()
 
 app.use(express.json())
 app.use(cors({
-  origin: "http://localhost:5173", 
+  origin: "http://localhost:5174", 
   credentials: true                
-}));
+}));  
 app.use(cookieParser());
 app.use('/api/user', logger , userRouter)
 app.get('/',(req,res)=>{
     res.send("API working")
 })
 
-
+app.use((err,req,res,next)=>{
+  res.status(500).json({error:"something went wrong"})
+})
 app.listen(PORT , ()=>{
     console.log("Server running")
 })

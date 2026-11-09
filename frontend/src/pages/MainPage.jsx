@@ -1,12 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../Components/Sidebar";
 import EnrollmentPanel from "../Components/EnrollmentPanel";
+import PreferencesPanel from "../Components/PreferencesPanel";
+import { DEFAULT_PREFERENCES } from "../Lib/preferences";
 import subjectsData from "./simplified.json";
-import api from "../Lib/axios";
+import api, { errorMessage } from "../Lib/axios";
 import toast from "react-hot-toast";
+
+// College rule: at most 30 credits per semester. Students may select more
+// than this; the scheduler fits the best timetable within the cap.
+const MAX_CREDITS = 30;
+// Most subjects a student can select (the server rejects more).
+const MAX_SUBJECTS = 13;
 
 const MainPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,12 +40,63 @@ const MainPage = () => {
             }
           : Object.fromEntries(uniqueStaff.map((staff) => [staff, true]));
 
-        return { ...subj, preferredStaff };
+        return { ...subj, preferredStaff, mustInclude: s.mustInclude === true };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, MAX_SUBJECTS);
   });
 
+  // Slot locks ([{ code, slot }]) set on the timetable page, kept when editing.
+  const [locks, setLocks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("selectedLocksEdit")) || [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("selectedLocksEdit", JSON.stringify(locks));
+  }, [locks]);
+
+  const handleToggleMustInclude = (code) =>
+    setSelectedSubjects((prev) => prev.map((s) => (s.code === code ? { ...s, mustInclude: !s.mustInclude } : s)));
+
+  // Lock faculty: keep only this staff member selected for the subject.
+  const handleOnlyStaff = (code, staff) =>
+    setSelectedSubjects((prev) =>
+      prev.map((s) =>
+        s.code === code
+          ? { ...s, preferredStaff: Object.fromEntries(Object.keys(s.preferredStaff).map((n) => [n, n === staff])) }
+          : s
+      )
+    );
+
+  const handleUnlock = (code) => setLocks((prev) => prev.filter((l) => l.code !== code));
+
+  const totalCredits = selectedSubjects.reduce((sum, s) => sum + (s.credits || 0), 0);
+
   const [user, setUser] = useState({});
+  const [generating, setGenerating] = useState(false);
+  const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
+  const savePrefsTimer = useRef(null);
+
+  // Load saved time preferences once.
+  useEffect(() => {
+    api
+      .get("/preferences")
+      .then((res) => res.data.success && setPreferences(res.data.preferences))
+      .catch((error) => console.error("Could not load preferences:", error));
+  }, []);
+
+  // Save preference changes after a short pause, so quick clicks send one request.
+  const handlePreferencesChange = (next) => {
+    setPreferences(next);
+    clearTimeout(savePrefsTimer.current);
+    savePrefsTimer.current = setTimeout(() => {
+      api.put("/preferences", { preferences: next }).catch(() => toast.error("Could not save your preferences"));
+    }, 500);
+  };
   const navigate = useNavigate();
 
   const filteredSubjects = subjectsData.filter((subj) => {
@@ -64,8 +123,13 @@ const MainPage = () => {
         if (res.data.success) setUser(res.data.user);
       } catch (error) {
         console.log(error);
-        toast.error("Authentication error");
-        navigate("/login");
+        // Only a rejected session means "log in again"; a down server gets its own message.
+        if (error.response) {
+          toast.error("Please log in again");
+          navigate("/login");
+        } else {
+          toast.error(errorMessage(error));
+        }
       }
     }
     LoggedIn();
@@ -73,28 +137,29 @@ const MainPage = () => {
 
   const handleAddSubject = (subject) => {
     console.log(subject);
-    if (selectedSubjects.length >= 13) {
-      alert("You can select a maximum of 13 subjects.");
+    if (selectedSubjects.length >= MAX_SUBJECTS) {
+      toast.error(`You can select at most ${MAX_SUBJECTS} subjects. Remove one to add another.`);
       return;
     }
 
-    if (!selectedSubjects.find((s) => s.code === subject.code)) {
-      const staffList = subject.schedules.map((sch) => sch.staff);
-      const uniqueStaff = [...new Set(staffList)];
+    if (selectedSubjects.find((s) => s.code === subject.code)) return;
 
-      const preferredStaff = uniqueStaff.reduce((acc, staff) => {
-        acc[staff] = true;
-        return acc;
-      }, {});
+    const staffList = subject.schedules.map((sch) => sch.staff);
+    const uniqueStaff = [...new Set(staffList)];
 
-      setSelectedSubjects([
-        ...selectedSubjects,
-        { ...subject, preferredStaff },
-      ]);
-    }
+    const preferredStaff = uniqueStaff.reduce((acc, staff) => {
+      acc[staff] = true;
+      return acc;
+    }, {});
+
+    setSelectedSubjects([
+      ...selectedSubjects,
+      { ...subject, preferredStaff },
+    ]);
   };
 
   const handleDeleteSubject = (code) => {
+    handleUnlock(code);
     setSelectedSubjects((prev) => {
       const updated = prev.filter((subj) => subj.code !== code);
       localStorage.setItem("selectedSubjectsEdit", JSON.stringify(updated));
@@ -134,36 +199,57 @@ const MainPage = () => {
         staff: Object.keys(subj.preferredStaff).filter(
           (staff) => subj.preferredStaff[staff]
         ),
+        ...(subj.mustInclude ? { mustInclude: true } : {}),
       })),
+      preferences,
+      locks: locks.filter((l) => selectedSubjects.some((s) => s.code === l.code)),
     };
 
-    console.log("Sending to backend:", timetable);
-
+    setGenerating(true);
     try {
       const response = await api.post("/timetables", timetable);
       if (!response.data.success) {
-        toast.error("Something went wrong");
-        navigate("login");
+        toast.error(response.data.message || "Something went wrong");
+        return;
       }
+      // The timetable page shows these as Option 1..5; nothing is saved until the student picks one.
+      sessionStorage.setItem(
+        "generatedVariants",
+        JSON.stringify({
+          variants: response.data.variants,
+          partial: response.data.partial,
+          warnings: response.data.warnings || [],
+          request: timetable, // reused by "Regenerate around locks" and saved with the timetable
+        })
+      );
       navigate("/timetable");
     } catch (error) {
       console.error("Error generating timetable:", error);
-      toast.error("Authentication error");
-      navigate("/login");
+      if (error.response?.status === 401) {
+        toast.error("Please log in again");
+        navigate("/login");
+      } else {
+        toast.error(errorMessage(error, "Could not generate a timetable"));
+      }
+    } finally {
+      setGenerating(false);
     }
   };
 
   return (
     <div className="dark:bg-dark min-h-screen">
       <Navbar login={true} profile={true} />
-      <div className="flex">
+      <div className="flex flex-col sm:flex-row">
         <Sidebar
           subjects={filteredSubjects}
           onAddSubject={handleAddSubject}
+          selectedCodes={new Set(selectedSubjects.map((s) => s.code))}
+          locked={selectedSubjects.length >= MAX_SUBJECTS}
+          maxSubjects={MAX_SUBJECTS}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
         />
-        <div className="w-[60%]">
+        <div className="w-full sm:w-[60%]">
           {user.tables?.length != 0 && (
             <div className="mt-1 backdrop-blur-md flex justify-end">
               <Link to={"/timetable"}>
@@ -177,7 +263,18 @@ const MainPage = () => {
             selectedSubjects={selectedSubjects}
             onUpdateStaff={handleUpdateStaff}
             onGenerate={handleGenerateTimetable}
+            generating={generating}
+            locks={locks}
+            onToggleMustInclude={handleToggleMustInclude}
+            onOnlyStaff={handleOnlyStaff}
+            onUnlock={handleUnlock}
+            beforeGenerate={
+              <PreferencesPanel preferences={preferences} onChange={handlePreferencesChange} />
+            }
             onDeleteSubject={handleDeleteSubject}
+            totalCredits={totalCredits}
+            maxCredits={MAX_CREDITS}
+            maxSubjects={MAX_SUBJECTS}
           />
         </div>
       </div>
