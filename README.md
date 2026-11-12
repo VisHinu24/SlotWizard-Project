@@ -1,92 +1,129 @@
 # SlotWizard – Streamlined Course Scheduling for Students
 
-SlotWizard is a smart web-based system that automates course enrollment and generates conflict-free timetables for students using an intelligent backtracking algorithm integrated with the MERN stack. It minimizes manual effort, reduces scheduling conflicts, and provides students with personalized, optimized schedules in real time.​
+SlotWizard is a web app that automates course enrollment and builds clash-free timetables for students. A backtracking scheduling engine runs on a MERN stack (MongoDB, Express, React, Node). Students pick subjects and faculty, set how they like their week, and get up to five ranked timetables to compare and save.
 
 # About
 
-SlotWizard addresses the limitations of traditional ERP and manual scheduling systems, which often fail to handle complex course combinations, faculty preferences, and slot constraints. By combining a customized backtracking-based scheduling engine with a modern MERN-based web interface, it delivers a scalable, cost-effective, and user-centric solution for academic timetable generation and management.​
+Traditional ERP and manual scheduling often fail with complex course combinations, faculty preferences and slot constraints. SlotWizard combines a custom backtracking engine with a modern web interface to give students a fast, personal way to plan their semester.
 
-The system operates in two key phases: smart enrollment (subject and faculty preference selection) and timetable optimization (automatic generation of a clash-free schedule). Students can view, edit, and regenerate their timetable in real time, while the system continually checks for slot clashes, faculty double-booking, and elective group conflicts.​
+It works in two phases:
+
+1. **Smart enrollment:** choose subjects, preferred faculty and time preferences.
+2. **Timetable optimisation:** the engine builds clash-free timetables that keep credits as high as possible, within the college limit of 30.
+
+Students can view, compare, lock, edit and regenerate timetables at any time. The engine checks for slot clashes, lab blocks, duplicate electives and faculty double-booking.
 
 # Features
 
-1. Automated generation of conflict-free timetables using a customized backtracking algorithm.​
+1. **Top 5 options:** one click gives up to five ranked, distinct clash-free timetables. Compare any option with Option 1 (changed classes are highlighted), then save the one you want.
+2. **30-credit rule:** select up to 13 subjects, even over 30 credits. Every timetable stays within the 30-credit limit, and the engine drops whichever subjects keep credits highest.
+3. **Time preferences:** no 8:00 classes, no 3:00–5:00 classes, free days, fewer gaps, and a maximum number of classes per day. Each one is *Hard* (never broken) or *Soft* with a Low / Medium / High weight. Credits always come first.
+4. **Locks:** lock a class to its slot and regenerate around it, keep only one faculty for a subject ("Only this"), or mark a subject *Must include* so every option has it.
+5. **Clear reasons:** every missed subject says why (clash, preference, credit limit, class times off the grid), and each option lists the soft preferences it breaks.
+6. **Edit restores everything:** saved timetables remember faculty choices, must-include subjects and locks.
+7. **Accurate long sections:** 6- and 8-hour sections, and classes at off-block times (for example 9:00–11:00), take every block they touch, so there are no hidden clashes.
+8. **Secure accounts:** JWT-based login with protected routes.
+9. **Neo-brutalist design:** bold borders, flat bright colours and a colour per subject that stays the same everywhere. Light and dark modes, and it works on phones.
 
-2. Smart subject enrollment with support for core, elective, and faculty preference selection.​
+# Tech stack
 
-3. Real-time slot clash detection for overlapping slots, lab blocks, duplicate electives, and faculty double-booking.​
+**Frontend:** React 19, Vite, React Router, Tailwind CSS v4, axios, react-hot-toast, lucide-react.
 
-4. Personalized timetable management with options to view, edit, and regenerate schedules.​
+**Backend:** Node.js, Express, Mongoose, JSON Web Token, dotenv, cors.
 
-5. MERN stack architecture (MongoDB, Express.js, React.js, Node.js) for full-stack, scalable web deployment.​
+**Database:** MongoDB (Atlas, or a local MongoDB / Docker container).
 
-5. Secure authentication using JWT-based login and protected routes for student access.​
+**Requirements:** Windows 10 / 11, Linux or macOS · Node.js 18+ · npm · Git.
 
-6. Interactive UI for enrollment and timetable display using React components and SPA design.​
+# Running locally
 
-7. Backend scheduling engine with pruning, slot-order prioritization, and best-timetable selection based on maximum credits/subjects.​
+### 1. Database
 
-# Requirements
+Use MongoDB Atlas, or run MongoDB locally with Docker:
 
-<b>Operating System:</b> Windows 10 / 11, Linux, or macOS (for MERN development and deployment).​
+```bash
+docker run -d --name slotwizard-mongo -p 27017:27017 mongo:7
+```
 
-<b>Frontend:</b> React.js (SPA), HTML5, CSS3, JavaScript.​
+### 2. Backend
 
-<b>Backend:</b> Node.js with Express.js for REST APIs and scheduling services.​
+Create `backend/.env`:
 
-<b>Database:</b> MongoDB for storing users, subjects, slots, faculty, and timetable metadata.​
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/slotwizard
+JWT_SECRET=change-me
+```
 
-<b>Authentication & Security: </b> JSON Web Tokens (JWT), secure password storage, and access control for protected routes.​
+Then start it (runs on port 5000):
 
-<b>Tools / IDE:</b> Visual Studio Code or equivalent, Git for version control, npm/yarn for dependency management.​
+```bash
+cd backend && npm install && npm run dev
+```
 
-<b>Core Libraries / Dependencies (indicative):</b> 
-1. React, React Router, axios, react-hot-toast (frontend).​
+### 3. Frontend
 
-2. Express, Mongoose, JSON Web Token, dotenv, cors (backend).​
+Run it on port 5174, the port the backend allows for CORS:
 
-# System Architecture
+```bash
+cd frontend && npm install && npm run dev -- --port 5174
+```
 
-The system follows a layered client–server architecture built on the MERN stack. The React frontend handles user interaction (login, subject selection, timetable view), the Express/Node backend hosts REST APIs and the scheduling engine, and MongoDB stores all domain data such as subjects, faculty, slots, and user profiles.​
+Open http://localhost:5174.
 
-<b>High-level flow:</b>
+### Tests
 
-Student authenticates and selects subjects with preferred faculty from the Enrollment Panel.​
+Scheduler tests use Node's built-in test runner and need no database:
 
-Selections are sent to the backend, where the backtracking-based timetable generator checks constraints and fills a weekly timetable structure.​
+```bash
+cd backend && npm test
+```
 
-The backend returns the best conflict-free timetable and any missed subjects, which the frontend renders as an interactive weekly grid.​
+# System architecture
+
+SlotWizard uses a layered client–server design:
+
+- **React frontend:** sign-up and login, subject and faculty selection, time preferences, and the timetable view with options, compare and locks.
+- **Express / Node backend:** REST APIs, authentication and the scheduling engine.
+- **MongoDB:** users, saved timetables, selections and preferences.
+
+**How it flows:**
+
+1. The student logs in and picks subjects, faculty and time preferences on the planning page.
+2. The selection goes to the backend. The backtracking engine prunes clashing combinations, follows hard preferences, scores soft ones and keeps credits as high as possible.
+3. The backend returns up to five ranked timetables with missed subjects and their reasons. The frontend shows them as a colour-coded weekly grid.
+4. The student compares options, locks classes, regenerates if needed and saves the timetable they want.
 
 ![Architecture](<./Output_Images/Architecture.jpg>)
 
-Output1 – Landing Page
+Full design notes: [docs/PRD-scheduler-v2.md](docs/PRD-scheduler-v2.md) · build steps: [docs/PHASES.md](docs/PHASES.md)
 
-The landing page introduces SlotWizard, highlighting its purpose of generating smarter, clash-free timetables and guiding users to register or log in with a clean, animated interface.​
+# Screenshots
+
+**Landing page:** introduces SlotWizard and leads students to sign up or log in.
 ![landing](<./Output_Images/Landing.png>)
-![signup](<./Output_Images/SignUp.png>)
 
-The login page allows registered students to authenticate securely before accessing the dashboard, with validations and error feedback for invalid credentials.​
+**Sign up and login:** create an account or log in, with validation and clear error messages.
+![signup](<./Output_Images/SignUp.png>)
 ![login](<./Output_Images/Login.png>)
 
-The Enrollment Panel lets students browse/search all available subjects, add them to a selection list, and choose preferred faculty per subject with corresponding slot details.
-![Enrollment](<./Output_Images/Main.png>)​
+**Planning page:** search the subject catalog, add subjects, choose faculty, mark must-include subjects and set time preferences.
+![Enrollment](<./Output_Images/Main.png>)
 
-The Timetable Display Page shows the generated clash-free weekly schedule in a tabular grid with days vs time slots, including subject code, name, faculty, and slot.​
-It also lists missed subjects that could not be scheduled and allows navigation between timetable variants (Previous/Next) and options like Edit or New.​The engine is optimized with pruning and slot-order heuristics to provide near-instant timetable generation for typical semester loads.​
+**Timetable page:** compare up to five options in a colour-coded weekly grid, lock classes, regenerate around locks, see missed subjects with reasons, and save the one you want.
 ![timetable](<./Output_Images/Timetable.png>)
 
-# Results and Impact
+# Results and impact
 
-SlotWizard significantly reduces the manual complexity of timetable creation, eliminating common issues like overlapping subjects, duplicate electives, and faculty double-booking. It improves academic planning efficiency by allowing students to experiment with course combinations and instantly visualize the impact on their weekly schedule.​
+SlotWizard removes the manual work of building a timetable and avoids overlapping classes, duplicate electives and faculty double-booking. Students can try different course combinations and immediately see how each one changes their week, while preferences and locks keep the result close to what they actually want.
 
-For institutions, the system demonstrates how intelligent algorithms (backtracking, constraint handling, simple heuristics) combined with modern web technologies can form a robust, scalable academic scheduling platform. This mini-project can be extended into a production-grade solution integrated with institutional ERPs or used as a base for more advanced research in timetable optimization and adaptive scheduling.​
+For institutions, it shows how backtracking, constraint handling and simple heuristics, combined with modern web technology, can form a solid academic scheduling platform. The project can be extended into a production system connected to an institution's ERP, or used as a base for research into timetable optimisation and adaptive scheduling.
 
-# Articles published / References
+# References
 
-Sadeh, N., Sycara, K., Xiong, Y. “Backtracking Techniques for Hard Scheduling Problems,” Carnegie Mellon University, 1992.​
+Sadeh, N., Sycara, K., Xiong, Y. "Backtracking Techniques for Hard Scheduling Problems," Carnegie Mellon University, 1992.
 
-Alagu Lakshmi, S., Sujitha, S., Durga, N. “Time Table Automation System Using Backtracking Technique,” International Journal of Advanced Research in Biology Engineering Science and Technology, 2016.​
+Alagu Lakshmi, S., Sujitha, S., Durga, N. "Time Table Automation System Using Backtracking Technique," International Journal of Advanced Research in Biology Engineering Science and Technology, 2016.
 
-Deris, S., Omatu, S., Ohta, H. “Timetable Planning Using Constraint-Based Reasoning,” Computers & Operations Research, 1999/2000.​
+Deris, S., Omatu, S., Ohta, H. "Timetable Planning Using Constraint-Based Reasoning," Computers & Operations Research, 1999/2000.
 
-Alghamdi, H., Alsubait, T., Alhakami, H., Baz, A. “A Review of Optimization Algorithms for University Timetable Scheduling,” Engineering, Technology & Applied Science Research, 2020.​
+Alghamdi, H., Alsubait, T., Alhakami, H., Baz, A. "A Review of Optimization Algorithms for University Timetable Scheduling," Engineering, Technology & Applied Science Research, 2020.
